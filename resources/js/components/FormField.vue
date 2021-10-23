@@ -140,12 +140,71 @@ export default {
       formData.append(this.field.attribute, JSON.stringify(allValues));
     },
 
+    emitValuesToListen() {
+          const ARR_REGEX = () => /\[\d+\]$/g;
+          const allValues = [];
+
+          for (const row of this.rows) {
+              let formData = new FormData();
+              const rowValues = {};
+
+              // Fill formData with field values
+              row.forEach(field => field.fill(formData));
+
+              // Save field values to rowValues
+              for (const item of formData) {
+                  let normalizedValue = null;
+
+                  let key = item[0];
+                  if (key.split('---').length === 3) {
+                      key = key.split('---').slice(1).join('---');
+                  }
+                  key = key.replace(/---\d+/, '');
+
+                  // Is key is an array, we need to remove the '.en' part from '.en[0]'
+                  const isArray = !!key.match(ARR_REGEX());
+                  if (isArray) {
+                      const result = ARR_REGEX().exec(key);
+                      key = `${key.slice(0, result.index)}${key.slice(result.index + result[0].length)}`;
+                  }
+
+                  try {
+                      // Attempt to parse value
+                      normalizedValue = JSON.parse(item[1]);
+                  } catch (e) {
+                      // Value is already a valid string
+                      normalizedValue = item[1];
+                  }
+
+                  if (isArray) {
+                      if (!rowValues[key]) rowValues[key] = [];
+                      rowValues[key].push(normalizedValue);
+                  } else {
+                      rowValues[key] = normalizedValue;
+                  }
+              }
+
+              allValues.push(rowValues);
+          }
+
+          Nova.$emit("broadcast-field-input", {
+              'field_name': this.field.attribute,
+              'value': JSON.stringify(allValues)
+          });
+          console.log({
+              'field_name': this.field.attribute,
+              'value': JSON.stringify(allValues)
+          });
+    },
+
     addRow() {
-      this.rows.push(this.copyFields(this.field.fields, this.rows.length));
+        this.emitValuesToListen();
+        this.rows.push(this.copyFields(this.field.fields, this.rows.length));
     },
 
     deleteRow(index) {
-      this.rows.splice(index, 1);
+        this.rows.splice(index, 1);
+        this.emitValuesToListen();
     },
   },
 

@@ -62,15 +62,27 @@
           </div>
         </draggable>
 
-        <button
-          v-if="canAddRows"
-          @click="addRow"
-          class="add-button btn btn-default btn-primary"
-          :class="{ 'delete-width': canDeleteRows, 'mt-3': rows.length }"
-          type="button"
-        >
-          {{ __('simpleRepeatable.addRow') }}
-        </button>
+        <div class="row">
+          <button
+            v-if="canAddRows"
+            @click="addRow"
+            class="add-button btn btn-default btn-success"
+            :class="{ 'delete-width': canDeleteRows, 'mt-3': rows.length }"
+            type="button"
+          >
+            {{ __('simpleRepeatable.addRow') }}
+          </button>
+
+          <button
+            v-if="canAddRows"
+            @click="emitValuesToListen"
+            class="add-button btn btn-default btn-primary"
+            :class="{ 'delete-width': canDeleteRows, 'mt-3': rows.length }"
+            type="button"
+          >
+            {{ __('simpleRepeatable.apply') }}
+          </button>
+        </div>
       </div>
     </template>
   </default-field>
@@ -347,10 +359,10 @@ export default {
   }
 
   .add-button {
-    width: calc(100% + 11px);
+    width: calc(50% + 11px);
 
     &.delete-width {
-      width: calc(100% - 22px);
+      width: calc(50% - 22px);
     }
   }
 

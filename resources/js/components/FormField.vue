@@ -74,7 +74,7 @@
           </button>
 
           <button
-            v-if="canAddRows"
+            v-if="showApplyButton"
             @click="emitValuesToListen"
             class="add-button btn btn-default btn-primary"
             :class="{ 'delete-width': canDeleteRows, 'mt-3': rows.length }"
@@ -90,19 +90,23 @@
 
 <script>
 import Draggable from 'vuedraggable';
-import { Errors } from 'form-backend-validation';
-import { FormField, HandlesValidationErrors } from 'laravel-nova';
+import {Errors} from 'form-backend-validation';
+import {FormField, HandlesValidationErrors} from 'laravel-nova';
 import HandlesRepeatable from '../mixins/HandlesRepeatable';
 
 export default {
   mixins: [FormField, HandlesValidationErrors, HandlesRepeatable],
 
-  components: { Draggable },
+  components: {Draggable},
 
   props: ['resourceName', 'resourceId', 'field'],
 
   methods: {
     fill(formData) {
+      formData.append(this.field.attribute, JSON.stringify(this.getAllValuesArray()));
+    },
+
+    getAllValuesArray() {
       const ARR_REGEX = () => /\[\d+\]$/g;
       const allValues = [];
 
@@ -149,74 +153,44 @@ export default {
         allValues.push(rowValues);
       }
 
-      formData.append(this.field.attribute, JSON.stringify(allValues));
+      return allValues;
     },
 
     emitValuesToListen() {
-          const ARR_REGEX = () => /\[\d+\]$/g;
-          const allValues = [];
-
-          for (const row of this.rows) {
-              let formData = new FormData();
-              const rowValues = {};
-
-              // Fill formData with field values
-              row.forEach(field => field.fill(formData));
-
-              // Save field values to rowValues
-              for (const item of formData) {
-                  let normalizedValue = null;
-
-                  let key = item[0];
-                  if (key.split('---').length === 3) {
-                      key = key.split('---').slice(1).join('---');
-                  }
-                  key = key.replace(/---\d+/, '');
-
-                  // Is key is an array, we need to remove the '.en' part from '.en[0]'
-                  const isArray = !!key.match(ARR_REGEX());
-                  if (isArray) {
-                      const result = ARR_REGEX().exec(key);
-                      key = `${key.slice(0, result.index)}${key.slice(result.index + result[0].length)}`;
-                  }
-
-                  try {
-                      // Attempt to parse value
-                      normalizedValue = JSON.parse(item[1]);
-                  } catch (e) {
-                      // Value is already a valid string
-                      normalizedValue = item[1];
-                  }
-
-                  if (isArray) {
-                      if (!rowValues[key]) rowValues[key] = [];
-                      rowValues[key].push(normalizedValue);
-                  } else {
-                      rowValues[key] = normalizedValue;
-                  }
-              }
-
-              allValues.push(rowValues);
-          }
-
-          Nova.$emit("broadcast-field-input", {
-              'field_name': this.field.attribute,
-              'value': JSON.stringify(allValues)
-          });
-          console.log({
-              'field_name': this.field.attribute,
-              'value': JSON.stringify(allValues)
-          });
+      this.emitValue(JSON.stringify(this.getAllValuesArray()));
     },
 
     addRow() {
-        this.emitValuesToListen();
-        this.rows.push(this.copyFields(this.field.fields, this.rows.length));
+      this.emitValuesToListen();
+      this.rows.push(this.copyFields(this.field.fields, this.rows.length));
     },
 
     deleteRow(index) {
-        this.rows.splice(index, 1);
-        this.emitValuesToListen();
+      this.rows.splice(index, 1);
+      this.emitValuesToListen();
+    },
+
+    emitValue(value) {
+      if (this.field.broadcastTo == null) return;
+
+      let attribute = this.field.attribute
+      if (Array.isArray(this.field.broadcastTo)) {
+        this.field.broadcastTo.forEach(function (broadcastChannel) {
+          Nova.$emit(broadcastChannel, {
+            'field_name': attribute,
+            'value': value
+          })
+        });
+      } else {
+        Nova.$emit(this.field.broadcastTo, {
+          'field_name': attribute,
+          'value': value
+        })
+      }
+    },
+
+    afterInitAction() {
+      this.emitValuesToListen();
     },
   },
 
@@ -262,6 +236,10 @@ export default {
         errors: new Errors(formattedKeyErrors),
         locales: erroredFieldLocales,
       };
+    },
+
+    showApplyButton() {
+      return this.field.broadcastTo != null && this.field.broadcastTo != '';
     },
 
     canAddRows() {

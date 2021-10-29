@@ -40,6 +40,11 @@ export default {
       if (this.field.minRows && !isNaN(this.field.minRows)) {
         while (this.rows.length < this.field.minRows) this.addRow();
       }
+      this.afterInitAction();
+    },
+
+    afterInitAction() {
+      // Nothing here.
     },
 
     copyFields(fields, rowIndex = void 0) {
@@ -75,7 +80,7 @@ export default {
         });
       }
 
-      return localeKeys.map(key => ({ key, name: field.translatable.locales[key] }));
+      return localeKeys.map(key => ({key, name: field.translatable.locales[key]}));
     },
 
     setAllLocales(uniqueId, newLocale) {

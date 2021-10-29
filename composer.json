@@ -10,18 +10,24 @@
     "keyvalue",
     "field"
   ],
-  "version": "1.5.0",
   "license": "MIT",
   "require": {
     "php": ">=7.2.0",
-    "laravel/nova": "^3.0",
-    "optimistdigital/nova-translations-loader": "^3.0.0"
+    "laravel/nova": "~3.0",
+    "optimistdigital/nova-translations-loader": "^3.0.0",
+    "ext-json": "*"
   },
   "autoload": {
     "psr-4": {
       "OptimistDigital\\NovaSimpleRepeatable\\": "src/"
     }
   },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "https://nova.laravel.com"
+    }
+  ],
   "extra": {
     "laravel": {
       "providers": [

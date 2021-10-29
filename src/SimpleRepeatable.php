@@ -3,6 +3,7 @@
 namespace OptimistDigital\NovaSimpleRepeatable;
 
 use Exception;
+use Laravel\Nova\Element;
 use Laravel\Nova\Nova;
 use Laravel\Nova\Fields\Field;
 use Illuminate\Support\Collection;
@@ -54,6 +55,18 @@ class SimpleRepeatable extends Field
     public function canDeleteRows($canDeleteRows = true)
     {
         return $this->withMeta(['canDeleteRows' => $canDeleteRows]);
+    }
+
+    /**
+     * Tells the client side component which channel to broadcast on
+     * @param array|string $broadcastChannel
+     * @return Element
+     */
+    public function broadcastTo($broadcastChannel): Element
+    {
+        return $this->withMeta([
+            'broadcastTo' => $broadcastChannel
+        ]);
     }
 
     /**
